@@ -1054,7 +1054,12 @@ def notify_status_accounts(cookies):
     if tg_token and tg_chat_id:
         push_ok = bool(telegram_push(tg_token, tg_chat_id, title, content)) and push_ok
 
-    return 0 if (success_cnt == len(cookies) and push_ok) else 1
+    # 通知渠道故障（如 PushPlus 未实名返回 905）不等于本次核对失败：
+    # 只告警，退出码仍由账号状态查询结果决定，避免状态推送任务长期恒红。
+    if not push_ok:
+        log("⚠️ 通知渠道发送失败，仅记录告警，不影响运行结果")
+
+    return 0 if success_cnt == len(cookies) else 1
 
 
 def diagnose_accounts(cookies):
